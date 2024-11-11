@@ -1,0 +1,108 @@
+﻿@{
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    ViewData["Title"] = "Câu hỏi người dùng";
+}
+@model UserQuestion
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
+@functions {
+    public string GetAntiXsrfRequestToken()
+    {
+        return Xsrf.GetAndStoreTokens(Context).RequestToken;
+    }
+}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card my-4">
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+                <div class="bg-gradient-primary shadow-primary border-radius-lg pt-4 pb-3">
+                    <h6 class="text-white text-capitalize ps-3">Câu hỏi người dùng</h6>
+                </div>
+            </div>
+            <div class="card-body px-0 pb-2">
+                <div class="table-responsive p-0">
+                    <table class="table align-items-center mb-0">
+                        <thead>
+                            <tr>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Tên</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Tài khoản</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Email</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Nội dung</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Nội dung Phản hồi</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Tài khoản phản hồi</th>
+                                <th class="text-secondary opacity-7"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (UserQuestion item in ViewBag.ListUserQuestion)
+                            {
+                                <tr>
+                                    <td>
+                                        <p id="name-@item.Id" class="mx-3 text-xs font-weight-bold mb-0">@item.FullName</p>
+                                    </td>
+                                    <td>
+                                        <p class="mx-3 text-xs font-weight-bold mb-0">@(!string.IsNullOrEmpty(item.UserName) ? item.UserName : "")</p>
+                                    </td>
+                                    <td class="align-middle">
+                                        <span class="text-secondary text-xs font-weight-bold">@item.Email</span>
+                                    </td>
+                                    <td class="align-middle">
+                                        <span class="text-secondary text-xs font-weight-bold">@item.Message</span>
+                                    </td>
+                                    <td class="align-middle">
+                                        <span class="text-secondary text-xs font-weight-bold">@item.AdminMessage</span>
+                                    </td>
+                                    <td class="align-middle">
+                                        <span class="text-secondary text-xs font-weight-bold">@item.AdminUserName</span>
+                                    </td>
+                                    <td class="align-middle">
+                                        @if (string.IsNullOrEmpty(item.AdminMessage))
+                                        {
+                                            <a href="javascript:;" onclick="showPopup(@item.Id)" class="text-secondary font-weight-bold text-xs" data-toggle="modal" data-target="#exampleModalUserQuestion">
+                                                Phản hồi
+                                            </a>
+                                        }
+
+                                    </td>
+                                </tr>
+                            }
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal -->
+<div class="modal fade" id="exampleModalUserQuestion" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form id="formModal" class="modal-content" method="post" asp-action="FeedbackUserQuestion">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Phản hồi người dùng</h5>
+                <button type="button" class="btn close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div style="display:block" class="input-group input-group-outline">
+                    <label for="Description">Nội dung</label>
+                    <textarea style="width:100%" asp-for="AdminMessage" type="text" class="form-control" rows="8" autofocus></textarea>
+                </div>
+                <div class="d-none input-group input-group-outline">
+                    <input type="number" asp-for="Id" id="user-question-id"  />
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Lưu thông tin</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+    document.getElementById('QuestionViewId').classList.add('active');
+
+    function showPopup(id) {
+        document.getElementById('user-question-id').value = id;
+    }
+</script>
