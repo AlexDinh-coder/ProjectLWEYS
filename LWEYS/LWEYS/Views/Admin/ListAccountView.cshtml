@@ -1,0 +1,207 @@
+﻿@{
+    Layout = "~/Views/Admin/_AdminLayout.cshtml";
+    var index = 0;
+    ViewData["Title"] = "Quản lý người dùng";
+}
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
+@functions {
+    public string GetAntiXsrfRequestToken()
+    {
+        return Xsrf.GetAndStoreTokens(Context).RequestToken;
+    }
+}
+<div style="display:block" class="mb-4 form-group input-group input-group-outline">
+    <label>Vai trò</label>
+    <select onchange="changeRole(this)" style="width:5rem;cursor:pointer" class="form-control">
+        @foreach (string role in ViewBag.ListRoles)
+        {
+            if (role == ViewBag.SelectedRole)
+            {
+                <option value="@role" selected>@role</option>
+            }
+            else
+            {
+                <option value="@role">@role</option>
+            }
+        }
+    </select>
+</div>
+<div class="row">
+    <div class="col-12">
+        <div class="card my-4">
+            <div class="card-header p-0 position-relative mt-n4 mx-3 z-index-2">
+                <div class="bg-gradient-primary shadow-primary border-radius-lg pt-4 pb-3">
+                    <h6 class="text-white text-capitalize ps-3">Quản lý người dùng</h6>
+                </div>
+            </div>
+            <div class="card-body px-0 pb-2">
+                <div class="table-responsive p-0" style="padding-left:2rem !important;padding-right:2rem !important">
+                    <table id="myTable" class="table align-items-center mb-0">
+                        <thead>
+                            <tr>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">#</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7">Tài khoản</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Họ tên</th>
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Email</th>
+                                @if (ViewBag.IsCustomer)
+                                {
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2">Trạng thái</th>
+                                    <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2"></th>
+                                }    
+                                <th class="text-uppercase text-secondary text-xxs font-weight-bolder opacity-7 ps-2"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (AccountViewModel item in ViewBag.ListAccount)
+                            {
+                                <tr>
+                                    <td class="align-middle">
+                                        <span class="text-secondary text-xs font-weight-bold mx-3">@(++index)</span>
+                                    </td>
+                                    <td>
+                                        <p class="mx-3 text-xs font-weight-bold mb-0">@item.UserName</p>
+                                    </td>
+                                    <td>
+                                        <p class=" text-xs font-weight-bold mb-0">@item.FullName</p>
+                                    </td>
+                                    <td class="align-middle">
+                                        <span class="text-secondary text-xs font-weight-bold">@item.Email</span>
+                                    </td>
+                                    @if (ViewBag.IsCustomer)
+                                    {
+                                        <td class="align-middle">
+                                            <span class="text-secondary text-xs font-weight-bold">@item.Status</span>
+                                        </td>
+                                        <td class="align-middle">
+                                            @if (!item.AccountActive)
+                                            {
+                                                <a href="javascript:;" onclick="inactive('@item.UserName','false')" class="text-secondary font-weight-bold text-xs">
+                                                    Mở khóa tài khoản
+                                                </a>
+                                            }
+                                            else{
+                                                <a href="javascript:;" onclick="inactive('@item.UserName','true')" class="text-secondary font-weight-bold text-xs">
+                                                    Khóa tài khoản
+                                                </a>
+                                            }
+                                        </td>
+                                        <td class="align-middle">
+                                            <a href="javascript:;" onclick="authRole('@item.UserName')" class="text-secondary font-weight-bold text-xs">
+                                                Cấp quyền nhân viên
+                                            </a>
+                                        </td>
+                                    }
+                                    @if (ViewBag.IsStaff)
+                                    {
+                                        <td class="align-middle">
+                                            <a href="javascript:;" onclick="authRole('@item.UserName',0)" class="text-secondary font-weight-bold text-xs">
+                                                Hủy bỏ quyền nhân viên
+                                            </a>
+                                        </td>
+                                    }
+                                    @if (ViewBag.IsAdmin)
+                                    {
+                                        <td class="align-middle"></td>
+                                    }
+
+                                </tr>
+                            }
+
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="~/lib/jquery/dist/jquery.js" asp-append-version="true"></script>
+<script src="https://cdn.datatables.net/2.1.8/js/dataTables.min.js" asp-append-version="true"></script>
+<script>
+    document.getElementById('AccountViewId').classList.add('active');
+    new DataTable('#myTable', {
+        initComplete: function () {
+            this.api()
+                .columns()
+                .every(function () {
+                    let column = this;
+                    let title = column.footer().textContent;
+
+                    // Create input element
+                    let input = document.createElement('input');
+                    input.placeholder = title;
+                    column.footer().replaceChildren(input);
+
+                    // Event listener for user input
+                    input.addEventListener('keyup', () => {
+                        if (column.search() !== this.value) {
+                            column.search(input.value).draw();
+                        }
+                    });
+                });
+        }
+    });
+
+    function changeRole(el) {
+        var role = $(el).val();
+        document.location.href = `/Admin/ListAccountView?role=${role}`;
+    }
+
+    function authRole(userName, grant = 1) {
+        let message = "Bạn muốn cấp quyền nhân viên cho tài khoản " + userName + " ?";
+        if (grant == 0) message = "Bạn muốn hủy bỏ quyền nhân viên cho tài khoản " + userName + " ?";
+        if (confirm(message) == false) return;
+        var formData = new FormData();
+        formData.append('username', userName);
+        formData.append('grant', grant);
+        $.ajax(
+            {
+                url: `/Admin/GrantAccessRole`,
+                type: "POST",
+                headers:
+                {
+                    "RequestVerificationToken": '@GetAntiXsrfRequestToken()'
+                },
+                data: formData,
+                async: true,
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    alert(data);
+                    window.location.reload();
+                }
+            }
+        );
+    }
+
+    function inactive(userName,lockAccount){
+        var message = "";
+        var lockAcc = false;
+        if(lockAccount == 'false'){
+            message = "Bạn có muốn mở khóa tài khoản ?";
+            lockAcc = false;
+        }
+        else{
+            message = "Bạn có muốn khóa tài khoản ?";
+            lockAcc = true;
+        }
+        if (confirm(message) == false) return;
+        //var formData = new FormData();
+        $.ajax(
+            {
+                url: `/Admin/ToggleLockUser?username=${userName}&lockAccount=${lockAcc}`,
+                type: "GET",
+                headers:
+                {
+                    "RequestVerificationToken": '@GetAntiXsrfRequestToken()'
+                },
+                async: true,
+                processData: false,
+                contentType: false,
+                success: function (data) {
+                    alert(data);
+                    window.location.reload();
+                }
+            }
+        );
+    }
+</script>
